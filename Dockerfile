@@ -1,4 +1,4 @@
-# Use Node.js 20 Alpine as base
+﻿# Use Node.js 20 Alpine as base
 FROM node:20-alpine
 
 # Install system dependencies
