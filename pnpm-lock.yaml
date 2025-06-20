@@ -210,7 +210,7 @@ patchedDependencies:
     hash: e0fd59254ab02473c6940fa25fcc8102ebc7d371c015ec53333a43f48af33cc2
     path: patches/eslint-plugin-n8n-local-rules.patch
   pdfjs-dist@5.3.31:
-    hash: 421253c8e411cdaef58ba96d2bb44ae0784e1b3e446f5caca50710daa1fa5dcd
+    hash: 5f0ab0fe4ff4f094b29d1cf47f7b8352afbaa1d9cd1d302a67521aef7aae9299
     path: patches/pdfjs-dist@5.3.31.patch
   pkce-challenge@5.0.0:
     hash: 651e785d0b7bbf5be9210e1e895c39a16dc3ce8a5a3843b4819565fb6e175b90
@@ -2612,7 +2612,7 @@ importers:
         version: 9.1.1
       pdfjs-dist:
         specifier: 5.3.31
-        version: 5.3.31(patch_hash=421253c8e411cdaef58ba96d2bb44ae0784e1b3e446f5caca50710daa1fa5dcd)
+        version: 5.3.31(patch_hash=5f0ab0fe4ff4f094b29d1cf47f7b8352afbaa1d9cd1d302a67521aef7aae9299)
       pg:
         specifier: 8.12.0
         version: 8.12.0
@@ -26441,7 +26441,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  pdfjs-dist@5.3.31(patch_hash=421253c8e411cdaef58ba96d2bb44ae0784e1b3e446f5caca50710daa1fa5dcd):
+  pdfjs-dist@5.3.31(patch_hash=5f0ab0fe4ff4f094b29d1cf47f7b8352afbaa1d9cd1d302a67521aef7aae9299):
     optionalDependencies:
       '@napi-rs/canvas': 0.1.70
 
