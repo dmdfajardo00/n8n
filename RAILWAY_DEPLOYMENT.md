@@ -14,6 +14,19 @@ This error occurs because:
 3. The `--no-optional` flag in the original Dockerfile prevents optional dependencies from being installed
 4. The native module `@rollup/rollup-linux-x64-musl` is not available during the build
 
+### Additional Error: "No changed files matched patterns"
+
+You may also encounter this error:
+
+```
+No changed files matched patterns: packages/**, *.json, *.yaml, *.yml
+```
+
+This error occurs because:
+1. Turbo's caching mechanism is too aggressive
+2. Railway's build context doesn't properly detect file changes
+3. The build process thinks nothing has changed when it should rebuild
+
 ## Solutions
 
 ### Solution 1: Modified Alpine-based Dockerfile (Recommended)
@@ -25,15 +38,29 @@ The main `Dockerfile` has been updated with the following changes:
    - `ROLLUP_SKIP_NATIVE=true`: Tells Rollup to skip native modules
    - `NODE_OPTIONS="--max-old-space-size=4096"`: Increases memory limit
    - `npm_config_arch=x64`, `npm_config_platform=linux`, `npm_config_libc=musl`: Ensures correct native module selection
+   - `TURBO_FORCE=true`, `TURBO_CACHE=false`, `CI=true`: Disables Turbo caching
 3. **Added fallback installation**: Manually installs the Rollup native module if needed
+4. **Added cache cleaning**: Removes existing build artifacts before building
 
-### Solution 2: Alternative Dockerfile (Dockerfile.alternative)
+### Solution 2: Alternative Dockerfile (Dockerfile.alpine)
 
-If the Alpine-based solution doesn't work, use `Dockerfile.alternative` which:
+If the Alpine-based solution doesn't work, use `Dockerfile.alpine` which:
 
-1. **Uses `node:22-slim`**: Based on Debian with glibc instead of Alpine with musl
-2. **Avoids musl issues**: No native module compatibility problems
-3. **Larger image size**: But more reliable for Railway deployment
+1. **Uses `node:22-alpine`**: Based on Alpine Linux with musl
+2. **Includes Turbo cache fixes**: Disables caching and forces rebuilds
+3. **Smaller image size**: More efficient for Railway deployment
+
+### Solution 3: Custom Build Script
+
+Use the `railway-build.sh` script for manual builds:
+
+```bash
+# Make the script executable
+chmod +x railway-build.sh
+
+# Run the build script
+./railway-build.sh
+```
 
 ## Usage
 
@@ -46,7 +73,13 @@ docker build -t n8n-railway .
 ### For Solution 2 (Debian-based):
 ```bash
 # Use the alternative Dockerfile
-docker build -f Dockerfile.alternative -t n8n-railway .
+docker build -f Dockerfile.alpine -t n8n-railway .
+```
+
+### For Solution 3 (Custom script):
+```bash
+# Use the custom build script
+./railway-build.sh
 ```
 
 ## Railway Configuration
@@ -68,7 +101,7 @@ Or for the alternative solution:
 {
   "build": {
     "builder": "DOCKERFILE",
-    "dockerfilePath": "Dockerfile.alternative"
+    "dockerfilePath": "Dockerfile.alpine"
   }
 }
 ```
@@ -81,6 +114,9 @@ The following environment variables are automatically set in the Dockerfile:
 - `NODE_ENV=production`: Production environment
 - `ROLLUP_SKIP_NATIVE=true`: Skip Rollup native modules
 - `NODE_OPTIONS="--max-old-space-size=4096"`: Increase memory limit
+- `TURBO_FORCE=true`: Force Turbo to rebuild all packages
+- `TURBO_CACHE=false`: Disable Turbo caching
+- `CI=true`: Indicates CI environment
 - `N8N_PORT=5678`: n8n port
 - `N8N_HOST=0.0.0.0`: Bind to all interfaces
 - `N8N_PROTOCOL=http`: Use HTTP protocol
@@ -90,12 +126,15 @@ The following environment variables are automatically set in the Dockerfile:
 If you still encounter issues:
 
 1. **Check Railway logs**: Look for specific error messages
-2. **Try the alternative Dockerfile**: Switch to `Dockerfile.alternative`
-3. **Increase build resources**: Railway may need more memory/CPU for the build
-4. **Check pnpm version**: Ensure compatibility with the pnpm version specified
+2. **Try the alternative Dockerfile**: Switch to `Dockerfile.alpine`
+3. **Use the custom build script**: Run `railway-build.sh` manually
+4. **Increase build resources**: Railway may need more memory/CPU for the build
+5. **Check pnpm version**: Ensure compatibility with the pnpm version specified
+6. **Clear Railway cache**: Sometimes Railway's own caching can cause issues
 
 ## Additional Notes
 
-- The build process may take longer due to the removal of `--no-optional`
+- The build process may take longer due to the removal of `--no-optional` and disabled caching
 - The image size will be slightly larger but more reliable
-- The alternative Dockerfile uses a larger base image but avoids musl compatibility issues 
+- The alternative Dockerfile uses Alpine Linux for smaller size but includes all necessary fixes
+- The custom build script provides a manual alternative for complex deployment scenarios 

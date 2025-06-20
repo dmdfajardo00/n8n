@@ -19,8 +19,11 @@ WORKDIR /app
 ENV DOCKER_BUILD=true
 ENV NODE_ENV=production
 
-# Set environment variables for better build performance
+# Set environment variables for better build performance and disable caching
 ENV NODE_OPTIONS="--max-old-space-size=4096"
+ENV TURBO_FORCE=true
+ENV TURBO_CACHE=false
+ENV CI=true
 
 # Copy package files and npm configuration
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
@@ -31,6 +34,9 @@ RUN npm install -g corepack@0.33 && corepack enable && corepack prepare pnpm@10.
 # Copy source code
 COPY . .
 
+# Clean any existing build artifacts and Turbo cache
+RUN rm -rf packages/*/dist packages/*/.turbo .turbo
+
 # Install dependencies with verbose output for debugging
 RUN echo "Starting pnpm install..." && \
     pnpm --version && \
@@ -38,8 +44,10 @@ RUN echo "Starting pnpm install..." && \
     pnpm install --frozen-lockfile --reporter=append-only || \
     (echo "pnpm install failed, checking for errors..." && exit 1)
 
-# Build the application
-RUN pnpm run build
+# Build the application with forced rebuild
+RUN echo "Starting build process..." && \
+    pnpm run build --force || \
+    (echo "Build failed, trying without cache..." && pnpm run build --no-cache)
 
 # Create non-root user
 RUN groupadd -g 1001 nodejs && \

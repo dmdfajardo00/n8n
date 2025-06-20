@@ -1,4 +1,4 @@
-﻿# Use Node.js 22 Alpine as base
+﻿# Use Alpine Linux for smaller image size
 FROM node:22-alpine
 
 # Install system dependencies
@@ -7,7 +7,7 @@ RUN apk add --no-cache \
     py3-pip \
     ffmpeg \
     git \
-    && pip3 install --no-cache-dir --break-system-packages yt-dlp
+    && pip3 install --no-cache-dir yt-dlp
 
 # Set working directory
 WORKDIR /app
@@ -16,9 +16,14 @@ WORKDIR /app
 ENV DOCKER_BUILD=true
 ENV NODE_ENV=production
 
-# Set environment variables to handle Rollup native modules on Alpine Linux
-ENV ROLLUP_SKIP_NATIVE=true
+# Set environment variables for better build performance and disable caching
 ENV NODE_OPTIONS="--max-old-space-size=4096"
+ENV TURBO_FORCE=true
+ENV TURBO_CACHE=false
+ENV CI=true
+ENV ROLLUP_SKIP_NATIVE=true
+
+# Set npm configuration for Alpine/musl
 ENV npm_config_arch=x64
 ENV npm_config_platform=linux
 ENV npm_config_libc=musl
@@ -32,6 +37,9 @@ RUN npm install -g corepack@0.33 && corepack enable && corepack prepare pnpm@10.
 # Copy source code
 COPY . .
 
+# Clean any existing build artifacts and Turbo cache
+RUN rm -rf packages/*/dist packages/*/.turbo .turbo
+
 # Install dependencies with verbose output for debugging
 RUN echo "Starting pnpm install..." && \
     pnpm --version && \
@@ -39,18 +47,14 @@ RUN echo "Starting pnpm install..." && \
     pnpm install --frozen-lockfile --reporter=append-only || \
     (echo "pnpm install failed, checking for errors..." && exit 1)
 
-# Install Rollup native module for Alpine Linux if needed
-RUN if [ ! -f "node_modules/@rollup/rollup-linux-x64-musl/package.json" ]; then \
-        echo "Installing Rollup native module for Alpine Linux..." && \
-        npm install @rollup/rollup-linux-x64-musl@4.35.0; \
-    fi
-
-# Build the application
-RUN pnpm run build
+# Build the application with forced rebuild
+RUN echo "Starting build process..." && \
+    pnpm run build --force || \
+    (echo "Build failed, trying without cache..." && pnpm run build --no-cache)
 
 # Create non-root user
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S n8n -u 1001
+RUN addgroup -g 1001 nodejs && \
+    adduser -u 1001 -G nodejs -s /bin/sh -D n8n
 
 # Make start script executable and change ownership
 RUN chmod +x /app/start-railway.sh
