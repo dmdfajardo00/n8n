@@ -23,19 +23,18 @@ echo "  N8N_HOST: $N8N_HOST"
 echo "  N8N_PROTOCOL: $N8N_PROTOCOL"
 echo "  DB_TYPE: $DB_TYPE"
 
-# Check if the CLI directory exists
-if [ ! -d "/app/packages/cli" ]; then
-    echo "ERROR: /app/packages/cli directory not found!"
+# Try to use the n8n binary from the CLI package
+if [ -f "/app/packages/cli/bin/n8n" ]; then
+    echo "Using n8n binary from CLI package..."
+    exec /app/packages/cli/bin/n8n start
+elif [ -f "/app/packages/cli/dist/index.js" ]; then
+    echo "Using n8n from dist directory..."
+    cd /app/packages/cli
+    exec node dist/index.js start
+else
+    echo "ERROR: n8n not found in expected locations!"
+    echo "Checking available files:"
+    ls -la /app/packages/cli/bin/ 2>/dev/null || echo "No bin directory"
+    ls -la /app/packages/cli/dist/ 2>/dev/null || echo "No dist directory"
     exit 1
-fi
-
-# Check if the built files exist
-if [ ! -f "/app/packages/cli/dist/index.js" ]; then
-    echo "ERROR: /app/packages/cli/dist/index.js not found! Build may have failed."
-    exit 1
-fi
-
-# Start n8n
-echo "Starting n8n on port $N8N_PORT..."
-cd /app/packages/cli
-exec node dist/index.js start 
+fi 

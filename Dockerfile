@@ -1,13 +1,16 @@
-﻿# Use Node.js 22 Alpine as base
-FROM node:22-alpine
+# Alternative Dockerfile for Railway deployment
+# Use Node.js 22 with glibc instead of Alpine to avoid musl issues
+FROM node:22-slim
 
 # Install system dependencies
-RUN apk add --no-cache \
+RUN apt-get update && apt-get install -y \
     python3 \
-    py3-pip \
+    python3-pip \
     ffmpeg \
     git \
-    && pip3 install --no-cache-dir --break-system-packages yt-dlp
+    && pip3 install --no-cache-dir yt-dlp \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /app
@@ -16,12 +19,8 @@ WORKDIR /app
 ENV DOCKER_BUILD=true
 ENV NODE_ENV=production
 
-# Set environment variables to handle Rollup native modules on Alpine Linux
-ENV ROLLUP_SKIP_NATIVE=true
+# Set environment variables for better build performance
 ENV NODE_OPTIONS="--max-old-space-size=4096"
-ENV npm_config_arch=x64
-ENV npm_config_platform=linux
-ENV npm_config_libc=musl
 
 # Copy package files and npm configuration
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
@@ -39,18 +38,12 @@ RUN echo "Starting pnpm install..." && \
     pnpm install --frozen-lockfile --reporter=append-only || \
     (echo "pnpm install failed, checking for errors..." && exit 1)
 
-# Install Rollup native module for Alpine Linux if needed
-RUN if [ ! -f "node_modules/@rollup/rollup-linux-x64-musl/package.json" ]; then \
-        echo "Installing Rollup native module for Alpine Linux..." && \
-        npm install @rollup/rollup-linux-x64-musl@4.35.0; \
-    fi
-
 # Build the application
 RUN pnpm run build
 
 # Create non-root user
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S n8n -u 1001
+RUN groupadd -g 1001 nodejs && \
+    useradd -u 1001 -g nodejs -s /bin/bash -m n8n
 
 # Make start script executable and change ownership
 RUN chmod +x /app/start-railway.sh
