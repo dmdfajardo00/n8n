@@ -60,4 +60,4 @@ COPY --from=builder /app /app
 WORKDIR /app/packages/@n8n/benchmark
 USER node
 
-ENTRYPOINT [ "/app/packages/@n8n/benchmark/bin/n8n-benchmark" ]
+ENTRYPOINT [ "/app/packages/@n8n/benchmark/bin/n8n-benchmark" ] 
