@@ -1,4 +1,4 @@
-# Alternative Dockerfile for Railway deployment
+﻿# Alternative Dockerfile for Railway deployment
 # Use Node.js 22 with glibc instead of Alpine to avoid musl issues
 FROM node:22-slim
 
@@ -8,14 +8,10 @@ RUN apt-get update && apt-get install -y \
     python3-pip \
     ffmpeg \
     git \
-<<<<<<< Updated upstream
-    && pip3 install --no-cache-dir yt-dlp \
+    curl \
+    && pip3 install --no-cache-dir --break-system-packages yt-dlp \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
-=======
-    curl \
-    && pip3 install --no-cache-dir --break-system-packages yt-dlp
->>>>>>> Stashed changes
 
 # Set working directory
 WORKDIR /app
