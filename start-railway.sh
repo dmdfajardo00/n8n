@@ -16,13 +16,18 @@ export DB_TYPE=${DB_TYPE:-sqlite}
 mkdir -p /app/data
 
 # Print environment for debugging
+echo "=== n8n Railway Startup ==="
 echo "Starting n8n with configuration:"
 echo "  NODE_ENV: $NODE_ENV"
 echo "  N8N_PORT: $N8N_PORT"
 echo "  N8N_HOST: $N8N_HOST"
 echo "  N8N_PROTOCOL: $N8N_PROTOCOL"
 echo "  DB_TYPE: $DB_TYPE"
+echo "  PORT (Railway): $PORT"
+echo "  PWD: $(pwd)"
+echo "=========================="
 
+<<<<<<< Updated upstream
 # Try to use the n8n binary from the CLI package
 if [ -f "/app/packages/cli/bin/n8n" ]; then
     echo "Using n8n binary from CLI package..."
@@ -38,3 +43,40 @@ else
     ls -la /app/packages/cli/dist/ 2>/dev/null || echo "No dist directory"
     exit 1
 fi 
+=======
+# Check if the CLI directory exists
+if [ ! -d "/app/packages/cli" ]; then
+    echo "ERROR: /app/packages/cli directory not found!"
+    ls -la /app/
+    exit 1
+fi
+
+# Check if the built files exist
+if [ ! -f "/app/packages/cli/dist/index.js" ]; then
+    echo "ERROR: /app/packages/cli/dist/index.js not found! Build may have failed."
+    ls -la /app/packages/cli/
+    ls -la /app/packages/cli/dist/ || echo "dist directory not found"
+    exit 1
+fi
+
+# Check Node.js and npm versions
+echo "Checking Node.js environment..."
+node --version
+npm --version
+
+# Set up database directory for SQLite
+if [ "$DB_TYPE" = "sqlite" ]; then
+    echo "Setting up SQLite database..."
+    mkdir -p /app/data
+    touch /app/data/database.sqlite
+    echo "SQLite database file created at /app/data/database.sqlite"
+fi
+
+# Start n8n with better error handling
+echo "Starting n8n on port $N8N_PORT..."
+cd /app/packages/cli
+
+# Start n8n in background and capture PID
+echo "Executing: node dist/index.js start"
+exec node dist/index.js start 
+>>>>>>> Stashed changes

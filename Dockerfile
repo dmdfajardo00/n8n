@@ -8,9 +8,14 @@ RUN apt-get update && apt-get install -y \
     python3-pip \
     ffmpeg \
     git \
+<<<<<<< Updated upstream
     && pip3 install --no-cache-dir yt-dlp \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+=======
+    curl \
+    && pip3 install --no-cache-dir --break-system-packages yt-dlp
+>>>>>>> Stashed changes
 
 # Set working directory
 WORKDIR /app
@@ -53,8 +58,11 @@ RUN echo "Starting build process..." && \
 RUN groupadd -g 1001 nodejs && \
     useradd -u 1001 -g nodejs -s /bin/bash -m n8n
 
-# Make start script executable and change ownership
+# Make scripts executable and change ownership
 RUN chmod +x /app/start-railway.sh
+RUN chmod +x /app/health-check.sh
+RUN chmod +x /app/env-check.sh
+RUN chmod +x /app/test-health.sh
 RUN chown -R n8n:nodejs /app
 USER n8n
 
@@ -66,6 +74,10 @@ ENV NODE_ENV=production
 ENV N8N_PORT=5678
 ENV N8N_HOST=0.0.0.0
 ENV N8N_PROTOCOL=http
+
+# Add health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:5678/healthz || exit 1
 
 # Start the application
 CMD ["/app/start-railway.sh"] 
