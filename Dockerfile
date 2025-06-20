@@ -20,10 +20,9 @@ WORKDIR /app
 ENV DOCKER_BUILD=true
 ENV NODE_ENV=production
 
-# Set environment variables for better build performance and disable caching
+# Set environment variables for better build performance
 ENV NODE_OPTIONS="--max-old-space-size=4096"
 ENV TURBO_FORCE=true
-ENV TURBO_CACHE=false
 ENV CI=true
 
 # Copy package files and npm configuration
@@ -48,7 +47,7 @@ RUN echo "Starting pnpm install..." && \
 # Build the application with forced rebuild
 RUN echo "Starting build process..." && \
     pnpm run build --force || \
-    (echo "Build failed, trying without cache..." && pnpm run build --no-cache)
+    (echo "Build failed, trying without cache..." && pnpm run build --cache=local:r,remote:r)
 
 # Create non-root user
 RUN groupadd -g 1001 nodejs && \
