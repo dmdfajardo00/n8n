@@ -12,17 +12,25 @@ RUN apk add --no-cache \
 # Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+# Set Docker build environment variable
+ENV DOCKER_BUILD=true
+ENV NODE_ENV=production
 
-# Install pnpm
-RUN npm install -g pnpm@10.12.1
+# Copy package files and npm configuration
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+
+# Install and enable corepack, then prepare specific pnpm version
+RUN npm install -g corepack@0.33 && corepack enable && corepack prepare pnpm@10.12.1 --activate
 
 # Copy source code
 COPY . .
 
-# Install dependencies
-RUN pnpm install --frozen-lockfile
+# Install dependencies with verbose output for debugging
+RUN echo "Starting pnpm install..." && \
+    pnpm --version && \
+    node --version && \
+    pnpm install --frozen-lockfile --no-optional --reporter=append-only || \
+    (echo "pnpm install failed, checking for errors..." && exit 1)
 
 # Build the application
 RUN pnpm run build
