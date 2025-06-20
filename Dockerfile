@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y \
     ffmpeg \
     git \
     curl \
+    dos2unix \
     && pip3 install --no-cache-dir --break-system-packages yt-dlp \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
@@ -53,12 +54,16 @@ RUN echo "Starting build process..." && \
 RUN groupadd -g 1001 nodejs && \
     useradd -u 1001 -g nodejs -s /bin/bash -m n8n
 
-# Make scripts executable and change ownership
-RUN chmod +x /app/start-railway.sh
-RUN chmod +x /app/health-check.sh
-RUN chmod +x /app/env-check.sh
-RUN chmod +x /app/test-health.sh
-RUN chown -R n8n:nodejs /app
+# Convert Windows line endings to Unix and make scripts executable
+RUN dos2unix /app/start-railway.sh && \
+    dos2unix /app/health-check.sh && \
+    dos2unix /app/env-check.sh && \
+    dos2unix /app/test-health.sh && \
+    chmod +x /app/start-railway.sh && \
+    chmod +x /app/health-check.sh && \
+    chmod +x /app/env-check.sh && \
+    chmod +x /app/test-health.sh && \
+    chown -R n8n:nodejs /app
 USER n8n
 
 # Expose port
